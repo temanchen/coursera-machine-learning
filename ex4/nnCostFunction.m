@@ -62,30 +62,49 @@ Theta2_grad = zeros(size(Theta2));
 %               and Theta2_grad from Part 2.
 %
 
+% feed forward
+a1 = [ones(m, 1) X];
+a2 = sigmoid(a1 * Theta1');
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-% -------------------------------------------------------------
+a2 = [ones(m, 1) a2];
+a3 = sigmoid(a2 * Theta2');
 
 % =========================================================================
 
+D3 = zeros(num_labels, 1);
+D2 = zeros(hidden_layer_size, 1);
+
+G2 = zeros(num_labels, hidden_layer_size + 1);
+G1 = zeros(hidden_layer_size, input_layer_size + 1);
+
+I = eye(num_labels);
+
+for i = 1:m
+    y_i = I(:, y(i));
+    h_i = a3(i, :)';
+
+    % accumulate cost
+    J -= (y_i' * log(h_i) + (1 - y_i') * log(1 - h_i)) / m;
+
+    % compute delta
+    D3 = h_i - y_i;
+    D2 = (a2(i, 2:end) .* (1 - a2(i, 2:end)))' .* (Theta2(:, 2:end)' * D3);
+
+    % accumulate gradient
+    G1 += D2 * a1(i, :);
+    G2 += D3 * a2(i, :);
+end
+
+% regularization
+theta1_bias = Theta1(:, 1);
+theta2_bias = Theta2(:, 1);
+J += lambda / (2 * m) * (nn_params' * nn_params - theta1_bias' * theta1_bias - theta2_bias' * theta2_bias);
+
+Theta1_grad = G1 / m + lambda / m * Theta1;
+Theta1_grad(:, 1) -= lambda / m * Theta1(:, 1);
+
+Theta2_grad = G2 / m + lambda / m * Theta2;
+Theta2_grad(:, 1) -= lambda / m * Theta2(:, 1);
+
 % Unroll gradients
 grad = [Theta1_grad(:) ; Theta2_grad(:)];
-
-
-end
